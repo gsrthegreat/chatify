@@ -1,7 +1,9 @@
 import bcrypt from 'bcryptjs';
+import 'dotenv/config';
 
 import User from '../models/user.model.js';
 import { generateToken } from '../lib/utils.js';
+import { sendWelcomeEmail } from '../emails/emailHandlers.js';
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -33,6 +35,12 @@ export const signup = async (req, res) => {
       await newUser.save();
       generateToken(newUser._id, res);
       res.status(201).json({ _id: newUser._id, fullName: newUser.fullName, email: newUser.email, password: newUser.password });
+
+      try {
+        await sendWelcomeEmail(newUser.email, newUser.fullName, process.env.CLIENT_URL);
+      } catch (error) {
+        console.log(error);
+      }
     } else {
       res.status(400).json({ message: "Invalid user data" });
     }
